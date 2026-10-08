@@ -1,0 +1,400 @@
+### Cinema API — перевірка всіх маршрутів
+### Виконуйте запити по черзі згори вниз (VS Code + розширення REST Client).
+### Перед першим запуском перезапустіть сервер, щоб сховища були порожні.
+
+@baseUrl = http://localhost:3000
+@missingId = 00000000-0000-4000-8000-000000000000
+
+@filmId = {{createFilm.response.body.$.id}}
+@filmToDeleteId = {{createFilmToDelete.response.body.$.id}}
+@hallId = {{createHall.response.body.$.id}}
+@hallToDeleteId = {{createHallToDelete.response.body.$.id}}
+@showingId = {{createShowing.response.body.$.id}}
+@bookingId = {{createBooking.response.body.$.id}}
+
+
+############################################################
+# ФІЛЬМИ
+############################################################
+
+### 1. GET /films — порожній масив (200)
+GET {{baseUrl}}/films
+
+### 2. POST /films — створити фільм (201)
+# @name createFilm
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Dune: Part Two",
+  "durationMinutes": 166,
+  "releaseYear": 2024
+}
+
+### 3. POST /films — другий фільм, який потім видалимо (201)
+# @name createFilmToDelete
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Oppenheimer",
+  "durationMinutes": 180,
+  "releaseYear": 2023
+}
+
+### 4. POST /films — поле відсутнє (400)
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Без тривалості",
+  "releaseYear": 2024
+}
+
+### 5. POST /films — неправильний тип поля (400)
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+  "title": "Interstellar",
+  "durationMinutes": "довгий",
+  "releaseYear": 2014
+}
+
+### 6. GET /films — масив фільмів (200)
+GET {{baseUrl}}/films
+
+### 7. GET /films/:id — фільм (200)
+GET {{baseUrl}}/films/{{filmId}}
+
+### 8. GET /films/:id — фільму немає (404)
+GET {{baseUrl}}/films/{{missingId}}
+
+### 9. PATCH /films/:id — оновити фільм (200)
+PATCH {{baseUrl}}/films/{{filmId}}
+Content-Type: application/json
+
+{
+  "durationMinutes": 167
+}
+
+### 10. PATCH /films/:id — неправильний тип поля (400)
+PATCH {{baseUrl}}/films/{{filmId}}
+Content-Type: application/json
+
+{
+  "releaseYear": "2024"
+}
+
+### 11. PATCH /films/:id — фільму немає (404)
+PATCH {{baseUrl}}/films/{{missingId}}
+Content-Type: application/json
+
+{
+  "title": "Нова назва"
+}
+
+
+############################################################
+# ЗАЛИ
+############################################################
+
+### 12. POST /halls — створити зал 3 × 5 (201)
+# @name createHall
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Червона зала",
+  "rows": 3,
+  "seatsPerRow": 5
+}
+
+### 13. POST /halls — другий зал, який потім видалимо (201)
+# @name createHallToDelete
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Мала зала",
+  "rows": 2,
+  "seatsPerRow": 4
+}
+
+### 14. POST /halls — поле відсутнє (400)
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Синя зала",
+  "rows": 5
+}
+
+### 15. POST /halls — неправильний тип поля (400)
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Синя зала",
+  "rows": "п'ять",
+  "seatsPerRow": 10
+}
+
+### 16. POST /halls — число не є цілим додатним (400)
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Синя зала",
+  "rows": -2,
+  "seatsPerRow": 2.5
+}
+
+### 17. POST /halls — зал з такою назвою вже існує (409)
+POST {{baseUrl}}/halls
+Content-Type: application/json
+
+{
+  "name": "Червона зала",
+  "rows": 4,
+  "seatsPerRow": 4
+}
+
+### 18. GET /halls — масив залів (200)
+GET {{baseUrl}}/halls
+
+### 19. GET /halls/:id — зал з 15 місцями (200)
+GET {{baseUrl}}/halls/{{hallId}}
+
+### 20. GET /halls/:id — залу немає (404)
+GET {{baseUrl}}/halls/{{missingId}}
+
+
+############################################################
+# СЕАНСИ
+############################################################
+
+### 21. POST /showings — створити сеанс на завтра (201)
+# @name createShowing
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{filmId}}",
+  "hallId": "{{hallId}}",
+  "startsAt": "{{$datetime iso8601 1 d}}",
+  "price": 12500
+}
+
+### 22. POST /showings — фільму не існує (400)
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{missingId}}",
+  "hallId": "{{hallId}}",
+  "startsAt": "{{$datetime iso8601 1 d}}",
+  "price": 12500
+}
+
+### 23. POST /showings — залу не існує (400)
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{filmId}}",
+  "hallId": "{{missingId}}",
+  "startsAt": "{{$datetime iso8601 1 d}}",
+  "price": 12500
+}
+
+### 24. POST /showings — startsAt не є датою ISO 8601 (400)
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{filmId}}",
+  "hallId": "{{hallId}}",
+  "startsAt": "завтра о сьомій",
+  "price": 12500
+}
+
+### 25. POST /showings — startsAt у минулому (400)
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{filmId}}",
+  "hallId": "{{hallId}}",
+  "startsAt": "2020-01-01T18:00:00.000Z",
+  "price": 12500
+}
+
+### 26. POST /showings — price не є цілим додатним (400)
+POST {{baseUrl}}/showings
+Content-Type: application/json
+
+{
+  "filmId": "{{filmId}}",
+  "hallId": "{{hallId}}",
+  "startsAt": "{{$datetime iso8601 1 d}}",
+  "price": 125.5
+}
+
+### 27. GET /showings — усі сеанси (200)
+GET {{baseUrl}}/showings
+
+### 28. GET /showings?filmId=&date= — фільтр за фільмом і датою (200)
+GET {{baseUrl}}/showings?filmId={{filmId}}&date={{$datetime 'YYYY-MM-DD' 1 d}}
+
+### 29. GET /showings?date= — date не у форматі YYYY-MM-DD (400)
+GET {{baseUrl}}/showings?date=01.12.2026
+
+### 30. GET /showings/:id — сеанс (200)
+GET {{baseUrl}}/showings/{{showingId}}
+
+### 31. GET /showings/:id — сеансу немає (404)
+GET {{baseUrl}}/showings/{{missingId}}
+
+### 32. GET /showings/:id/seats — схема залу, всі місця вільні (200)
+GET {{baseUrl}}/showings/{{showingId}}/seats
+
+### 33. GET /showings/:id/seats — сеансу немає (404)
+GET {{baseUrl}}/showings/{{missingId}}/seats
+
+
+############################################################
+# БРОНЮВАННЯ
+############################################################
+
+### 34. GET /bookings — порожній масив (200)
+GET {{baseUrl}}/bookings
+
+### 35. POST /showings/:id/bookings — забронювати 2 місця (201, totalPrice 25000)
+# @name createBooking
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 1, "seat": 1 },
+    { "row": 1, "seat": 2 }
+  ]
+}
+
+### 36. POST /showings/:id/bookings — сеансу немає (404)
+POST {{baseUrl}}/showings/{{missingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 2, "seat": 1 }]
+}
+
+### 37. POST /showings/:id/bookings — масив seats порожній (400)
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": []
+}
+
+### 38. POST /showings/:id/bookings — елемент без seat (400)
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 2 }]
+}
+
+### 39. POST /showings/:id/bookings — місце повторюється (400)
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 2, "seat": 3 },
+    { "row": 2, "seat": 3 }
+  ]
+}
+
+### 40. POST /showings/:id/bookings — ряд більший за rows (400)
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 4, "seat": 1 }]
+}
+
+### 41. POST /showings/:id/bookings — місце більше за seatsPerRow (400)
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 1, "seat": 6 }]
+}
+
+### 42. POST /showings/:id/bookings — число не є цілим додатним (400)
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [{ "row": 0, "seat": 1.5 }]
+}
+
+### 43. POST /showings/:id/bookings — місце 1/2 вже заброньоване (409), 3/3 теж не бронюється
+POST {{baseUrl}}/showings/{{showingId}}/bookings
+Content-Type: application/json
+
+{
+  "seats": [
+    { "row": 3, "seat": 3 },
+    { "row": 1, "seat": 2 }
+  ]
+}
+
+### 44. GET /showings/:id/seats — 1/1 і 1/2 зайняті, 3/3 вільне (200)
+GET {{baseUrl}}/showings/{{showingId}}/seats
+
+### 45. GET /showings/:id/bookings — бронювання сеансу (200)
+GET {{baseUrl}}/showings/{{showingId}}/bookings
+
+### 46. GET /showings/:id/bookings — сеансу немає (404)
+GET {{baseUrl}}/showings/{{missingId}}/bookings
+
+### 47. GET /bookings — усі бронювання (200)
+GET {{baseUrl}}/bookings
+
+### 48. DELETE /bookings/:id — скасувати бронювання (204)
+DELETE {{baseUrl}}/bookings/{{bookingId}}
+
+### 49. DELETE /bookings/:id — бронювання немає (404)
+DELETE {{baseUrl}}/bookings/{{bookingId}}
+
+### 50. GET /showings/:id/seats — місця знову вільні (200)
+GET {{baseUrl}}/showings/{{showingId}}/seats
+
+
+############################################################
+# ВИДАЛЕННЯ ФІЛЬМІВ І ЗАЛІВ
+############################################################
+
+### 51. DELETE /films/:id — на фільм посилається сеанс (409)
+DELETE {{baseUrl}}/films/{{filmId}}
+
+### 52. DELETE /films/:id — видалити фільм без сеансів (204)
+DELETE {{baseUrl}}/films/{{filmToDeleteId}}
+
+### 53. DELETE /films/:id — фільму немає (404)
+DELETE {{baseUrl}}/films/{{filmToDeleteId}}
+
+### 54. DELETE /halls/:id — на зал посилається сеанс (409)
+DELETE {{baseUrl}}/halls/{{hallId}}
+
+### 55. DELETE /halls/:id — видалити зал без сеансів (204)
+DELETE {{baseUrl}}/halls/{{hallToDeleteId}}
+
+### 56. DELETE /halls/:id — залу немає (404)
+DELETE {{baseUrl}}/halls/{{hallToDeleteId}}
+
+### 57. GET /films/:id — id не є UUID, спрацьовує ParseUUIDPipe (400)
+GET {{baseUrl}}/films/not-a-uuid
